@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APNG Animation</title>
+  <script src="https://cdn.jsdelivr.net/npm/apng-js/dist/apng.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #000;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="apng-canvas"></canvas>
+  <script>
+    const canvas = document.getElementById('apng-canvas');
+    const ctx = canvas.getContext('2d');
+    const apngUrl = "./hero.png"; // Относительный путь к вашему APNG файлу
+
+    fetch(apngUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Ошибка загрузки файла: ${response.status} ${response.statusText}`);
+        }
+        return response.arrayBuffer();
+      })
+      .then(buffer => APNG.parse(buffer))
+      .then(apng => {
+        if (!apng.frames || apng.frames.length === 0) {
+          throw new Error("APNG-файл пуст или повреждён.");
+        }
+
+        let frameIndex = 0;
+
+        function drawFrame(index) {
+          const frame = apng.frames[index];
+          const img = new Image();
+          img.src = frame.image;
+          img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          };
+        }
+
+        canvas.width = apng.width;
+        canvas.height = apng.height;
+
+        // Скролл для управления кадрами
+        window.addEventListener('scroll', () => {
+          const scrollTop = window.scrollY;
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const scrollFraction = scrollTop / scrollHeight;
+          frameIndex = Math.floor(scrollFraction * apng.frames.length) % apng.frames.length;
+          drawFrame(frameIndex);
+        });
+
+        // Отображение первого кадра
+        drawFrame(0);
+      })
+      .catch(error => {
+        console.error("Ошибка обработки APNG:", error);
+        alert("Не удалось загрузить APNG. Проверьте ссылку или файл.");
+      });
+  </script>
+</body>
+</html>
